@@ -144,6 +144,13 @@
         "title": "%markdown-preview-enhanced.showUploadedImages.title%",
         "enablement": "!isWeb"
       }
+,
+          {
+            "command": "markdown-preview-enhanced.openInBrowser",
+            "title": "%markdown-preview-enhanced.openInBrowser.title%",
+            "category": "Markdown",
+            "enablement": "!isWeb"
+          }
     ],
     "configuration": {
       "type": "object",
@@ -656,6 +663,12 @@
         "when": "editorLangId == markdown"
       },
       {
+        "command": "markdown-preview-enhanced.openInBrowser",
+        "key": "ctrl+alt+o",
+        "mac": "cmd+alt+o",
+        "when": "editorLangId == markdown && !isWeb"
+      },
+      {
         "command": "markdown-preview-enhanced.syncPreview",
         "key": "ctrl+shift+s",
         "when": "editorLangId == markdown"
@@ -667,6 +680,11 @@
           "command": "markdown-preview-enhanced.openPreviewToTheSide",
           "when": "editorLangId == markdown",
           "group": "markdown-preview-enhanced"
+        },
+        {
+          "command": "markdown-preview-enhanced.openInBrowser",
+          "when": "editorLangId == markdown && !isWeb",
+          "group": "markdown-preview-enhanced@1"
         }
       ],
       "editor/title": [

@@ -709,7 +709,8 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
     try {
       const sourceUri = vscode.Uri.parse(uri);
       // Write markdown to file
-      await vscode.workspace.fs.writeFile(sourceUri, Buffer.from(markdown));
+      const encoded = new TextEncoder().encode(markdown);
+      await vscode.workspace.fs.writeFile(sourceUri, encoded);
       // Update preview
       const previewProvider = await getPreviewContentProvider(sourceUri);
       previewProvider.updateMarkdown(sourceUri);
@@ -1091,6 +1092,13 @@ export async function initExtensionCommon(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.commands.registerCommand('_crossnote.openInBrowser', openInBrowser),
+  );
+  // 公开命令，便于在菜单和快捷键中使用
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      'markdown-preview-enhanced.openInBrowser',
+      openInBrowser,
+    ),
   );
 
   context.subscriptions.push(

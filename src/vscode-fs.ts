@@ -28,7 +28,9 @@ export function wrapVSCodeFSAsApi(scheme: string): FileSystemApi {
       path = path.replace(/^\//, '');
       const uri = getUri(path, scheme);
       const data = await vscode.workspace.fs.readFile(uri);
-      return Buffer.from(data).toString(encoding);
+      // Use TextDecoder to avoid Node Buffer dependency
+      const decoder = new TextDecoder((encoding as any) || 'utf-8');
+      return decoder.decode(data);
     },
     writeFile: async (
       path: string,
@@ -36,7 +38,8 @@ export function wrapVSCodeFSAsApi(scheme: string): FileSystemApi {
       encoding?: BufferEncoding,
     ): Promise<void> => {
       const uri = getUri(path, scheme);
-      await vscode.workspace.fs.writeFile(uri, Buffer.from(data, encoding));
+      const encoded = new TextEncoder().encode(data);
+      await vscode.workspace.fs.writeFile(uri, encoded);
     },
     mkdir: async (path: string): Promise<void> => {
       await vscode.workspace.fs.createDirectory(getUri(path, scheme));

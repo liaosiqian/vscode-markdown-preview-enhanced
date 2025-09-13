@@ -119,6 +119,12 @@ export class PreviewProvider {
    */
   private jsAndCssFilesMaps: { [key: string]: string[] } = {};
 
+  /**
+   * Mapping from source markdown absolute fsPath to a stable Open-In-Browser html path
+   * Used to keep a persistent HTML file per markdown so browser refresh shows latest
+   */
+  private openInBrowserDestMaps: { [key: string]: string } = {};
+
   public constructor() {
     // Please use `init` method to initialize this class.
   }
@@ -511,6 +517,22 @@ export class PreviewProvider {
     const previews = this.getPreviews(sourceUri);
     // console.log('updateMarkdown: ', previews?.length);
     if (!previews || !previews.length) {
+      // Keep stable Open-In-Browser html updated even if no preview panels are open
+      if (this.openInBrowserDestMaps[sourceUri.fsPath] && engine) {
+        vscode.workspace.openTextDocument(sourceUri).then(async (document) => {
+          try {
+            const text = document.getText();
+            const { html, yamlConfig } = await engine.parseMD(text, {
+              isForPreview: false,
+              useRelativeFilePath: true,
+              hideFrontMatter: false,
+            });
+            await this.writeStableOpenInBrowserHtml(sourceUri, html, yamlConfig);
+          } catch (error) {
+            console.error(error);
+          }
+        });
+      }
       return;
     }
 
@@ -576,6 +598,15 @@ export class PreviewProvider {
                     : 'editor-light'
                 } ${isVSCodeWebExtension() ? 'vscode-web-extension' : ''}`,
             });
+
+            // Update stable Open-In-Browser html if mapped
+            if (this.openInBrowserDestMaps[sourceUri.fsPath]) {
+              try {
+                await this.writeStableOpenInBrowserHtml(sourceUri, html, yamlConfig);
+              } catch (e) {
+                console.error(e);
+              }
+            }
           }
           break;
         } catch (error) {
@@ -623,17 +654,76 @@ export class PreviewProvider {
     }
   }
 
-  public openInBrowser(sourceUri: Uri) {
+  public async openInBrowser(sourceUri: Uri) {
     const engine = this.getEngine(sourceUri);
-    if (engine) {
-      if (isVSCodeWebExtension()) {
-        vscode.window.showErrorMessage(`Not supported in MPE web extension.`);
-      } else {
-        engine.openInBrowser({}).catch((error) => {
-          vscode.window.showErrorMessage(error.toString());
-        });
-      }
+    if (!engine) {
+      return;
     }
+
+    if (isVSCodeWebExtension()) {
+      vscode.window.showErrorMessage(`Not supported in MPE web extension.`);
+      return;
+    }
+
+    try {
+      const document = await vscode.workspace.openTextDocument(sourceUri);
+      const text = document.getText();
+      const { html, yamlConfig } = await engine.parseMD(text, {
+        isForPreview: false,
+        useRelativeFilePath: true,
+        hideFrontMatter: false,
+      });
+      const dest = await this.writeStableOpenInBrowserHtml(
+        sourceUri,
+        html,
+        yamlConfig,
+      );
+      await vscode.env.openExternal(vscode.Uri.file(dest));
+    } catch (error) {
+      vscode.window.showErrorMessage(error.toString());
+    }
+  }
+
+  private getStableOpenInBrowserDest(sourceUri: Uri): string {
+    const workspaceUri = getWorkspaceFolderUri(sourceUri);
+    const rel = path.relative(workspaceUri.fsPath, sourceUri.fsPath);
+    const relDir = path.dirname(rel);
+    const base = path.basename(sourceUri.fsPath, path.extname(sourceUri.fsPath));
+    const destDir = path.join(globalConfigPath, 'open-in-browser', relDir);
+    const dest = path.join(destDir, `${base}.html`);
+    return dest;
+  }
+
+  private async writeStableOpenInBrowserHtml(
+    sourceUri: Uri,
+    html: string,
+    yamlConfig: any,
+  ): Promise<string> {
+    const engine = this.getEngine(sourceUri);
+    if (!engine) return '';
+
+    const dest = this.getStableOpenInBrowserDest(sourceUri);
+    const destDir = path.dirname(dest);
+    await vscode.workspace.fs.createDirectory(vscode.Uri.file(destDir));
+
+    // Build full HTML template suitable for browser
+    const template = await engine.generateHTMLTemplateForExport(html, yamlConfig, {
+      isForPrint: false,
+      isForPrince: false,
+      offline: true,
+      embedLocalImages: false,
+      embedSVG: false,
+    });
+
+    const encoded = new TextEncoder().encode(template);
+    await vscode.workspace.fs.writeFile(
+      vscode.Uri.file(dest),
+      encoded,
+    );
+
+    // Record mapping for subsequent incremental updates
+    this.openInBrowserDestMaps[sourceUri.fsPath] = dest;
+    return dest;
   }
 
   public htmlExport(sourceUri: Uri, offline: boolean) {

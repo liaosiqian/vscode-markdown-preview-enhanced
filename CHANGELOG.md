@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fork Notes (liaosiqian)
+
+- 0.8.19-lsq.1
+  - 与上游 [0.8.19](https://github.com/shd101wyy/vscode-markdown-preview-enhanced/releases/tag/0.8.19) 对齐，移除将 `.vsix` 产物纳入版本库的提交，遵循通过 GitHub Release 分发二进制产物的做法。
+  - 标签：`0.8.19-lsq.1` 对应最新 fork 变更（提交 `b16d714`）。
+
 ## [0.8.19] - 2025-08-15
 
 Updated [crossnote](https://github.com/shd101wyy/crossnote) to version [0.9.15](https://github.com/shd101wyy/crossnote/releases/tag/0.9.15).
