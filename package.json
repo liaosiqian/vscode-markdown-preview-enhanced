@@ -1,7 +1,7 @@
 {
   "name": "markdown-preview-enhanced",
   "displayName": "%displayName%",
-  "version": "0.8.19",
+  "version": "0.8.19-lsq.2",
   "description": "%description%",
   "categories": [
     "Other"
@@ -143,14 +143,13 @@
         "command": "markdown-preview-enhanced.showUploadedImages",
         "title": "%markdown-preview-enhanced.showUploadedImages.title%",
         "enablement": "!isWeb"
+      },
+      {
+        "command": "markdown-preview-enhanced.openInBrowser",
+        "title": "%markdown-preview-enhanced.openInBrowser.title%",
+        "category": "Markdown",
+        "enablement": "!isWeb"
       }
-,
-          {
-            "command": "markdown-preview-enhanced.openInBrowser",
-            "title": "%markdown-preview-enhanced.openInBrowser.title%",
-            "category": "Markdown",
-            "enablement": "!isWeb"
-          }
     ],
     "configuration": {
       "type": "object",
